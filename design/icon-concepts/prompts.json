@@ -1,0 +1,56 @@
+{
+  "tool": "Built-in image_gen.imagegen",
+  "promptTemplate": "Use case: logo-brand. Asset type: one standalone macOS app icon concept for DockStay, a menu-bar utility keeping the macOS Dock on a chosen monitor. Concept {id}: {concept} Style: exceptionally minimalist flat vector-like design, crisp bold shapes, optical balance, generous negative space, legible at 32px. One charcoal symbol, a restrained cobalt blue accent only when helpful, on one pale ivory macOS rounded-square tile centered in a square image. Almost no dimensional effects, no elaborate gradients, no texture. Do not draw an application window or UI. No letters except where the concept explicitly requires D. No text, labels, numbers, watermark, collage or extra alternatives. Deliver exactly one polished icon.",
+  "concepts": [
+    {
+      "id": "01-screen-dock",
+      "concept": "A single clean rounded monitor outline with a short thick pill firmly centered at its bottom edge, representing a Dock staying on its chosen screen.",
+      "file": "01-screen-dock.png"
+    },
+    {
+      "id": "02-pin-dock",
+      "concept": "A very simple location pin silhouette whose center is a horizontal dock pill with three tiny square cutouts. Geometric and compact, suggesting the Dock is pinned.",
+      "file": "02-pin-dock.png"
+    },
+    {
+      "id": "03-anchor",
+      "concept": "An abstract anchor made from a vertical stem and a wide shallow rounded U-shaped dock tray, three small square app marks above the tray. Extremely reduced geometry.",
+      "file": "03-anchor.png"
+    },
+    {
+      "id": "04-two-screens",
+      "concept": "Two overlapping monitor outlines, one foreground screen with a single solid dock pill at its bottom. The other screen is subtly offset and has no dock. Clean instantly legible geometry.",
+      "file": "04-two-screens.png"
+    },
+    {
+      "id": "05-magnet",
+      "concept": "A bold minimal horseshoe magnet holding a small horizontal rounded dock pill in its opening. Two simple forms only, recognizable at small size.",
+      "file": "05-magnet.png"
+    },
+    {
+      "id": "06-corner-brackets",
+      "concept": "Four minimal screen corner brackets framing a single short bold horizontal dock bar near the bottom, implying a Dock constrained to a screen.",
+      "file": "06-corner-brackets.png"
+    },
+    {
+      "id": "07-shield",
+      "concept": "A minimal soft shield silhouette containing a small horizontal dock tray with three square app marks. Quiet precise protection, avoid cybersecurity branding.",
+      "file": "07-shield.png"
+    },
+    {
+      "id": "08-d-monogram",
+      "concept": "An abstract geometric capital D outline: its bottom horizontal stroke contains a small inset rounded dock pill, subtly unifying Dock and Stay in one strong mark.",
+      "file": "08-d-monogram.png"
+    },
+    {
+      "id": "09-lock",
+      "concept": "A minimal open monitor outline with a small central rounded dock tray; a tiny inverted U above the tray turns the dock into a subtle lock, one integrated symbol.",
+      "file": "09-lock.png"
+    },
+    {
+      "id": "10-stay-dot",
+      "concept": "A horizontal dock tray with three rounded square app marks, the central square extending upward as a small vertical pin with a circular head. A very reduced original mark for stay-in-place.",
+      "file": "10-stay-dot.png"
+    }
+  ]
+}

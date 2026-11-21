@@ -1,0 +1,19 @@
+name: Check
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  macos:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test pointer geometry
+        run: swift test
+      - name: Build app
+        run: bash scripts/build.sh
+      - name: Archive app
+        run: ditto -c -k --keepParent build/DockStay.app build/DockStay.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DockStay
+          path: build/DockStay.zip
