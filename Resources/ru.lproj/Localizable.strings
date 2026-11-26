@@ -1,6 +1,12 @@
 "Dock on" = "Dock на экране";
 "Choose a display" = "Выберите экран";
 "Display %lld — %@" = "Экран %lld — %@";
+"Display %@" = "Экран %@";
+"Saved Configurations" = "Сохранённые конфигурации";
+"Remember Configurations" = "Запоминать конфигурации";
+"No Saved Configurations" = "Нет сохранённых конфигураций";
+"Dock on: %@" = "Dock на экране: %@";
+"Delete Configuration" = "Удалить конфигурацию";
 "Quit DockStay" = "Выйти из DockStay";
 "Launch at Login" = "Запускать при входе в систему";
 "Allow Launch at Login…" = "Разрешить автозапуск…";
@@ -15,7 +21,6 @@
 "Accessibility: Allowed…" = "Универсальный доступ: выдан…";
 "Accessibility: Not allowed…" = "Универсальный доступ: не выдан…";
 "Open Accessibility settings" = "Открыть настройки Универсального доступа";
-"Waiting for selected display" = "Ожидаем подключения выбранного экрана";
 "Accessibility access required" = "Нужен Универсальный доступ";
 "Enable separate Spaces for displays" = "Включите отдельные пространства мониторов";
 "Could not start. Quit and reopen DockStay." = "Не удалось запустить. Переоткройте DockStay.";

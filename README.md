@@ -7,8 +7,8 @@ A small macOS menu-bar app. Choose the display for your Dock and switch blocking
 - A green status indicator means Dock blocking is active. A red indicator means blocking is off or paused. The text beside it explains the current state.
 - A second indicator shows whether DockStay has Accessibility permission. Green means access is granted. Red means access is missing. Click the row to open Accessibility settings.
 - **Launch at Login** toggles automatic startup using macOS Service Management. The menu reads the system state and offers a link to Login Items settings if approval is required.
-- Remembers the display UUID across launches and pauses when that display is disconnected.
-- Remembers whether blocking is enabled. Choosing another display while it is off does not request permission or move the pointer.
+- **Saved Configurations** lists the saved sets of screens. Choose a display once per setup with **Remember Configurations** on to restore the choice across launches and reconnections.
+- Remembers one **Lock Dock** setting across all setups. Choosing another display while it is off does not request permission or move the pointer.
 - No accounts, subscriptions, or telemetry. Network access is limited to manual update checks and downloads through Sparkle.
 - **Check for Updates…** checks the public release feed and offers to install a signed update when a newer version is available.
 - macOS 14+, English and Russian. Releases target Apple Silicon.
@@ -30,6 +30,8 @@ open build/DockStay.app
 ```
 
 Select a display and enable **Lock Dock**. Click the Accessibility row to open System Settings and enable DockStay. This is the only required permission. The indicator updates when permission changes, including while blocking is off. You can return to the same row to review or revoke access.
+
+Turn off **Remember Configurations** under **Saved Configurations** to choose screens without saving or restoring setups. Previously saved configurations stay available. To remove one, open the submenu for that set of screens and choose **Delete Configuration**. If that configuration is in use, DockStay keeps the current screen for the connected setup until you disconnect or relaunch.
 
 Permission navigation uses the macOS System Settings Accessibility URL, with a native authorization prompt and the Settings app as fallbacks. DockStay does not grant access itself.
 
@@ -66,11 +68,12 @@ For the real hardware check:
 1. Select each connected display. Verify Dock follows and the menu checkmark updates.
 2. Push against the Dock edge on every other display, including while dragging a file.
 3. Cross a shared display edge in both directions; it must remain accessible.
-4. Disconnect and reconnect the selected display. Verify it is remembered and the guard pauses while absent.
+4. Save different Dock displays for two sets of connected screens. Switch between the sets and relaunch DockStay. Verify each set restores its own choice. Connect a set with no saved choice and verify blocking pauses until you pick a display.
 5. Sleep and wake, revoke and restore Accessibility, and quit. The cursor must always remain usable.
 6. Turn blocking off, switch the selected display, sleep/wake, and relaunch. Blocking must remain off, the selection must be remembered, and there must be no permission prompts or pointer movement until explicitly re-enabled.
 7. With blocking off and on, click the permission row and verify it opens the Accessibility permission list. Change the grant there and verify the row updates when reopening the menu.
 8. In the installed app, enable **Launch at Login**, approve it in Login Items settings if requested, and log out and back in. Verify DockStay starts with the saved display and blocking state. Disable autostart and repeat; DockStay must not launch. Change the login item in System Settings and verify the menu reflects it when reopened.
+9. In **Saved Configurations**, turn off **Remember Configurations** and select a different display. Verify saved entries are unchanged and are skipped on relaunch. Delete one entry, re-enable remembering, and verify the other entries still restore their displays.
 
 CI runs the geometry tests and uploads a ZIP of the ad-hoc signed app, preserving executable permissions. For local sharing, use `ditto -c -k --keepParent build/DockStay.app DockStay.zip`.
 

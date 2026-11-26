@@ -1,6 +1,12 @@
 "Dock on" = "Dock on";
 "Choose a display" = "Choose a display";
 "Display %lld — %@" = "Display %lld — %@";
+"Display %@" = "Display %@";
+"Saved Configurations" = "Saved Configurations";
+"Remember Configurations" = "Remember Configurations";
+"No Saved Configurations" = "No Saved Configurations";
+"Dock on: %@" = "Dock on: %@";
+"Delete Configuration" = "Delete Configuration";
 "Quit DockStay" = "Quit DockStay";
 "Launch at Login" = "Launch at Login";
 "Allow Launch at Login…" = "Allow Launch at Login…";
@@ -15,7 +21,6 @@
 "Accessibility: Allowed…" = "Accessibility: Allowed…";
 "Accessibility: Not allowed…" = "Accessibility: Not allowed…";
 "Open Accessibility settings" = "Open Accessibility settings";
-"Waiting for selected display" = "Waiting for selected display";
 "Accessibility access required" = "Accessibility access required";
 "Enable separate Spaces for displays" = "Enable separate Spaces for displays";
 "Could not start. Quit and reopen DockStay." = "Could not start. Quit and reopen DockStay.";

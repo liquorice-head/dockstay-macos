@@ -13,8 +13,9 @@ struct ScreenChoice: Identifiable, Equatable {
 @Observable
 final class DockModel {
     private(set) var screens: [ScreenChoice] = []
-    private(set) var selectedID: String
-    private(set) var selectedName: String
+    private(set) var selectedID: String?
+    private(set) var remembersConfigurations: Bool
+    private(set) var savedConfigurations: [SavedDisplayConfiguration]
     private(set) var isBlockingEnabled: Bool
     private(set) var isBlockingActive = false
     private(set) var status = String(localized: "Choose a display")
@@ -22,6 +23,7 @@ final class DockModel {
 
     @ObservationIgnored private let pointer = PointerGuard()
     @ObservationIgnored private let placement = DockPlacement()
+    @ObservationIgnored private let displaySelections = DisplaySelections(defaults: .standard)
     @ObservationIgnored private var timer: Timer?
     @ObservationIgnored private var observers: [NSObjectProtocol] = []
     @ObservationIgnored private var workspaceObservers: [NSObjectProtocol] = []
@@ -30,9 +32,9 @@ final class DockModel {
     @ObservationIgnored private var placementRequest: Task<Void, Never>?
 
     init() {
-        selectedID = UserDefaults.standard.string(forKey: "selectedDisplayUUID") ?? ""
-        selectedName = UserDefaults.standard.string(forKey: "selectedDisplayName") ?? ""
         isBlockingEnabled = UserDefaults.standard.object(forKey: "blockingEnabled") as? Bool ?? true
+        remembersConfigurations = displaySelections.remembersConfigurations
+        savedConfigurations = displaySelections.configurations
         refreshScreens()
         observers.append(NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main
@@ -51,9 +53,10 @@ final class DockModel {
         for name in [NSWorkspace.didWakeNotification, NSWorkspace.screensDidWakeNotification] {
             workspaceObservers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
                 MainActor.assumeIsolated {
-                    self?.sleeping = false
-                    self?.pendingPlacement = true
-                    self?.refreshScreens()
+                    guard let self else { return }
+                    self.sleeping = false
+                    self.pendingPlacement = self.isBlockingEnabled && self.selectedID != nil
+                    self.refreshScreens()
                 }
             })
         }
@@ -65,23 +68,37 @@ final class DockModel {
     }
 
     func select(_ id: String) {
-        guard let screen = screens.first(where: { $0.id == id }) else { return }
-        placementRequest?.cancel()
-        placement.cancel()
-        selectedID = id
-        selectedName = screen.name
-        UserDefaults.standard.set(id, forKey: "selectedDisplayUUID")
-        UserDefaults.standard.set(screen.name, forKey: "selectedDisplayName")
-        pendingPlacement = isBlockingEnabled
+        let displays = connectedDisplays
+        guard displays[id] != nil else { return }
+        applySelection(id)
+        if remembersConfigurations {
+            displaySelections.setSelectedID(id, for: displays)
+            savedConfigurations = displaySelections.configurations
+        }
         if isBlockingEnabled && !AXIsProcessTrusted() { openPermissionSettings() }
         reconcile()
+    }
+
+    func setRemembersConfigurations(_ enabled: Bool) {
+        guard remembersConfigurations != enabled else { return }
+        displaySelections.remembersConfigurations = enabled
+        remembersConfigurations = enabled
+        if enabled, let id = restoreSelection(for: connectedDisplays), id != selectedID {
+            applySelection(id)
+            reconcile()
+        }
+    }
+
+    func removeConfiguration(_ id: String) {
+        displaySelections.removeConfiguration(id)
+        savedConfigurations = displaySelections.configurations
     }
 
     func setBlockingEnabled(_ enabled: Bool) {
         isBlockingEnabled = enabled
         UserDefaults.standard.set(enabled, forKey: "blockingEnabled")
-        pendingPlacement = enabled && !selectedID.isEmpty
-        if enabled && !selectedID.isEmpty && !AXIsProcessTrusted() { openPermissionSettings() }
+        pendingPlacement = enabled && selectedID != nil
+        if pendingPlacement && !AXIsProcessTrusted() { openPermissionSettings() }
         reconcile()
     }
 
@@ -106,6 +123,23 @@ final class DockModel {
         placement.cancel()
         pointer.stop()
         isBlockingActive = false
+    }
+
+    private func applySelection(_ id: String) {
+        placementRequest?.cancel()
+        placement.cancel()
+        selectedID = id
+        pendingPlacement = isBlockingEnabled
+    }
+
+    private var connectedDisplays: [String: String] {
+        Dictionary(screens.map { ($0.id, $0.name) }, uniquingKeysWith: { first, _ in first })
+    }
+
+    private func restoreSelection(for displays: [String: String]) -> String? {
+        let id = displaySelections.selectedID(for: displays)
+        savedConfigurations = displaySelections.configurations
+        return id
     }
 
     func stop() {
@@ -138,8 +172,17 @@ final class DockModel {
         if screens != updated {
             placementRequest?.cancel()
             placement.cancel()
+            let previousIDs = Set(screens.map(\.id))
             screens = updated
-            pendingPlacement = !selectedID.isEmpty
+            let displays = connectedDisplays
+            if previousIDs != Set(displays.keys) {
+                if remembersConfigurations {
+                    selectedID = restoreSelection(for: displays)
+                } else if let selectedID, displays[selectedID] == nil {
+                    self.selectedID = nil
+                }
+            }
+            pendingPlacement = isBlockingEnabled && selectedID != nil
         }
         reconcile()
     }
@@ -157,20 +200,15 @@ final class DockModel {
             status = String(localized: "Blocking is paused")
             return
         }
-        let edge = (CFPreferencesCopyAppValue("orientation" as CFString, "com.apple.dock" as CFString) as? String)
-            .flatMap(DockEdge.init(rawValue:)) ?? .bottom
-        if pointer.geometry.edge != edge { pendingPlacement = !selectedID.isEmpty }
-        pointer.geometry = EdgeGuard(displays: screens.map(\.display), selectedID: selectedID, edge: edge)
-        guard !selectedID.isEmpty else {
+        guard let selectedID, let selectedDisplay = screens.first(where: { $0.id == selectedID })?.display else {
             suspendBlocking()
             status = String(localized: "Choose a display")
             return
         }
-        guard screens.contains(where: { $0.id == selectedID }) else {
-            suspendBlocking()
-            status = String(localized: "Waiting for selected display")
-            return
-        }
+        let edge = (CFPreferencesCopyAppValue("orientation" as CFString, "com.apple.dock" as CFString) as? String)
+            .flatMap(DockEdge.init(rawValue:)) ?? .bottom
+        if pointer.geometry.edge != edge { pendingPlacement = true }
+        pointer.geometry = EdgeGuard(displays: screens.map(\.display), selectedID: selectedID, edge: edge)
         guard hasAccessibilityPermission else {
             suspendBlocking()
             status = String(localized: "Accessibility access required")
@@ -181,8 +219,7 @@ final class DockModel {
             status = String(localized: "Enable separate Spaces for displays")
             return
         }
-        guard let screen = pointer.geometry.displays.first(where: { $0.id == selectedID }),
-              pointer.geometry.activationPoint(for: screen) != nil else {
+        guard pointer.geometry.activationPoint(for: selectedDisplay) != nil else {
             suspendBlocking()
             status = String(localized: "This display has no free Dock edge")
             return

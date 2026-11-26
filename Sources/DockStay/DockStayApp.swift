@@ -1,3 +1,4 @@
+import DockStayCore
 import SwiftUI
 
 @main
@@ -21,19 +22,17 @@ struct DockStayApp: App {
 
             Picker("Dock on", selection: Binding(
                 get: { model.selectedID },
-                set: { model.select($0) }
+                set: { if let id = $0 { model.select(id) } }
             )) {
-                if model.selectedID.isEmpty {
-                    Text("Choose a display").tag("").disabled(true)
-                }
-                if !model.selectedID.isEmpty && !model.screens.contains(where: { $0.id == model.selectedID }) {
-                    Text(model.selectedName).tag(model.selectedID).disabled(true)
+                if model.selectedID == nil {
+                    Text("Choose a display").tag(nil as String?).disabled(true)
                 }
                 ForEach(Array(model.screens.enumerated()), id: \.element.id) { index, screen in
-                    Text("Display \(index + 1) — \(screen.name)").tag(screen.id)
+                    Text("Display \(index + 1) — \(screen.name)").tag(Optional(screen.id))
                 }
             }
             .pickerStyle(.inline)
+            savedConfigurationsMenu
 
             Divider()
             Button(action: model.openPermissionSettings) {
@@ -79,6 +78,48 @@ struct DockStayApp: App {
             .keyboardShortcut("q")
         }
         .menuBarExtraStyle(.menu)
+    }
+
+    private var savedConfigurationsMenu: some View {
+        let configurations = model.savedConfigurations
+        let titles = Dictionary(grouping: configurations) { configurationTitle($0) }
+
+        return Menu("Saved Configurations") {
+            Toggle("Remember Configurations", isOn: Binding(
+                get: { model.remembersConfigurations },
+                set: { model.setRemembersConfigurations($0) }
+            ))
+            Divider()
+            if configurations.isEmpty {
+                Text("No Saved Configurations")
+            }
+            ForEach(configurations) { configuration in
+                let title = configurationTitle(configuration)
+                let repeatedTitle = (titles[title]?.count ?? 0) > 1
+                let dockName = displayName(configuration.selectedID, in: configuration)
+                let repeatedName = configuration.displayIDs.filter { displayName($0, in: configuration) == dockName }.count > 1
+                let dockDisplay = displayName(configuration.selectedID, in: configuration, includeID: repeatedName)
+                Menu {
+                    Text("Dock on: \(dockDisplay)")
+                    Button("Delete Configuration", role: .destructive) {
+                        model.removeConfiguration(configuration.id)
+                    }
+                } label: {
+                    Text(verbatim: repeatedTitle ? configurationTitle(configuration, includeIDs: true) : title)
+                }
+            }
+        }
+    }
+
+    private func configurationTitle(_ configuration: SavedDisplayConfiguration, includeIDs: Bool = false) -> String {
+        configuration.displayIDs.map { displayName($0, in: configuration, includeID: includeIDs) }
+            .sorted().joined(separator: " + ")
+    }
+
+    private func displayName(_ id: String, in configuration: SavedDisplayConfiguration, includeID: Bool = false) -> String {
+        let suffix = String(id.suffix(8))
+        guard let name = configuration.displayNames[id] else { return String(localized: "Display \(suffix)") }
+        return includeID ? "\(name) (\(suffix))" : name
     }
 
     @ViewBuilder
