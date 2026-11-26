@@ -14,15 +14,22 @@ tool="$PWD/.build/artifacts/sparkle/Sparkle/bin/generate_appcast"
 [[ -f "$archive" ]] || { echo "Missing final signed, stapled archive: $archive" >&2; exit 1; }
 [[ -x "$tool" ]] || { echo "Run swift package resolve first." >&2; exit 1; }
 
-# Retain the local feed between releases so older entries keep their download URLs.
+# Sparkle applies the new URL prefix to every archive it scans. Give it the old
+# feed and only the new archive so existing entries keep their download URLs.
 updates="$PWD/dist/appcast"
 mkdir -p "$updates"
-cp "$archive" "$updates/"
+staging="$(mktemp -d "$updates/.generate.XXXXXX")"
+trap 'rm -rf "$staging"' EXIT
+if [[ -f "$updates/appcast.xml" ]]; then
+    cp "$updates/appcast.xml" "$staging/"
+fi
+cp "$archive" "$staging/"
 "$tool" \
     --account DockStay \
     --download-url-prefix "https://github.com/$repo/releases/download/v$version/" \
     --link "https://github.com/$repo" \
     --maximum-deltas 0 \
-    "$updates"
+    "$staging"
+cp "$staging/appcast.xml" "$updates/appcast.xml"
 cp "$updates/appcast.xml" "$PWD/dist/$version/appcast.xml"
 printf '\nUpload dist/%s/appcast.xml alongside the ZIP to the same GitHub release.\n' "$version"
